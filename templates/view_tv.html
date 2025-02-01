@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VonezTV | {{ title }} {{ year }}</title>
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='mdb.dark.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='all.min.css') }}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+
+    <style>
+        body {
+            background-color: #1a1a1a;
+        }
+
+        .episode-container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .warning-banner {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .video-container {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .episode-info {
+            margin-bottom: 2rem;
+        }
+
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .episode-button {
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .episode-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .episode-button.active {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .footer {
+            background: rgba(33, 37, 41, 0.9);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        /* Hidden spans for JavaScript */
+        .hidden-data {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hidden-data">
+        <span id="ep">{{ e }}</span>
+        <span id="se">{{ s }}</span>
+        <span id="id">{{ id }}</span>
+        <span id="epi_to_display">{{ epi_to_display }}</span>
+    </div>
+    <header>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">VonezTV</a>
+                <button class="navbar-toggler" type="button" data-mdb-toggle="collapse"
+                    data-mdb-target="#navbarExample01" aria-controls="navbarExample01" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarExample01">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                                data-mdb-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-film"></i> Movies
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <li class="">
+                                    <a class="dropdown-item" href="/search"><i class="fas fa-search"></i> Search
+                                        Movies</a>
+                                </li>
+                                <li class="">
+                                    <a class="dropdown-item" href="/browse"><i class="fas fa-fire"></i> Browse Popular
+                                        Movies</a>
+                                </li>
+                                <li class="">
+                                    <a class="dropdown-item" href="/top"><i class="fas fa-star"></i> Top Rated
+                                        Movies</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                                data-mdb-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-tv"></i> TV Shows
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <li class="">
+                                    <a class="dropdown-item" href="/search/tv"><i class="fas fa-search"></i> Search TV
+                                        Shows</a>
+                                </li>
+                                <li class="">
+                                    <a class="dropdown-item" href="/browse/tv"><i class="fas fa-fire"></i> Browse
+                                        Popular TV Shows</a>
+                                </li>
+                                <li class="">
+                                    <a class="dropdown-item" href="/top/tv"><i class="fas fa-star"></i> Top Rated TV
+                                        Shows</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="/api">API</a>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="https://github.com/crackhub-dev/movie-script"
+                                target="_blank">GitHub</a>
+                        </li>
+
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+        <!-- Navbar -->
+    </header>
+    <div class="container">
+        <!-- Warning Banner -->
+        <div class="warning-banner">
+            <i class="fas fa-shield-alt me-2"></i>
+            <strong>Note:</strong> For the best experience, use
+            <a href="https://ublockorigin.com/" target="_blank" class="text-warning">uBlock Origin</a>
+            to block unwanted ads.
+        </div>
+
+        <!-- Episode Information -->
+        <div class="episode-container">
+            <div class="episode-info">
+                <h1 class="mb-3">
+                    <b>{{ title }}</b>
+                    <span class="text-muted">| {{ year }}</span>
+                </h1>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="badge bg-primary">Season {{ s }}</span>
+                    <span class="badge bg-secondary">Episode {{ e }}</span>
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-star"></i> {{ rating }}/10
+                    </span>
+                </div>
+                <p class="lead">{{ overview }}</p>
+            </div>
+
+            <!-- Video Player -->
+            <div class="video-container">
+                <iframe src="https://www.vidsrc.me/embed/tv/{{ id }}/{{ s }}-{{ e }}" frameborder="0"
+                    allowfullscreen="true" width="100%" height="600px" class="movie">
+                </iframe>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="navigation-buttons">
+                <button class="btn btn-primary btn-lg" id="next-btn" onclick="nextEpisode()">
+                    Next Episode <i class="fas fa-arrow-circle-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Episode Selection -->
+        <div class="episode-selection text-center">
+            <h3 class="mb-4">All Episodes</h3>
+            <div class="episode-grid">
+                {% for ep in range(1, epi_to_display + 1) %}
+                <a href="/view/tv/{{ id }}/{{ s }}/{{ ep }}"
+                    class="episode-button btn {% if ep|string == e|string %}btn-success{% else %}btn-outline-light{% endif %}">
+                    Ep {{ ep }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="text-muted mb-3">
+                This application hosts no copyrighted content.
+                All content is hosted by unaffiliated third parties.
+            </p>
+            <p class="mb-3">2025 - Code by Vonez</p>
+            <p class="mb-0">
+                Powered by
+                <img class="px-2" src="{{ url_for('static', filename='tmdb.svg') }}" style="width: 150px" alt="TMDB">
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        function nextEpisode() {
+            const se = document.querySelector("#se").innerHTML;
+            const ep = parseInt(document.querySelector("#ep").innerHTML);
+            const id = document.querySelector("#id").innerHTML;
+            const epiToDisplay = parseInt(document.querySelector("#epi_to_display").innerHTML);
+
+            if (ep < epiToDisplay) {
+                window.location.href = `/view/tv/${id}/${se}/${ep + 1}`;
+            } else {
+                // Redirect to next season episode 1
+                const nextSeason = parseInt(se) + 1;
+                window.location.href = `/view/tv/${id}/${nextSeason}/1`;
+            }
+        }
+        // Keyboard navigation
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowRight') {
+                nextEpisode();
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='mdb.min.js') }}"></script>
+</body>
+
+</html>
