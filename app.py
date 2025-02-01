@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for
 import json
 import requests
+import os
 
 app = Flask(__name__)
-
-api_key = "ebad75d444db2d272a470389a56d12e9"
+api_key = os.environ.get('TMDB_API_KEY', "ebad75d444db2d272a470389a56d12e9")
 
 
 @app.route("/view/movie/<id>")
@@ -348,6 +348,5 @@ def api():
 
 
 if __name__ == "__main__":
-    app.run()
-
-app = app
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
