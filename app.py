@@ -23,50 +23,65 @@ def movie(id):
     )
     resp = api.json()
     
-    # Get torrent information
-    headers = {
-        'sec-ch-ua-platform': '"Windows"',
-        'Referer': '',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-        'sec-ch-ua': '"Not(A:Brand";v="99", "Brave";v="133", "Chromium";v="133"',
-        'sec-ch-ua-mobile': '?0',
-    }
+    # Check if vidsrc is playable
+    vidsrc_url = f"https://vidsrc.net/embed/movie/{tmdb_id}"
+    vidsrc_playable = False
     
-    torrent_api_url = f"https://torrentio.strem.fun/providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex/stream/movie/{imdb_id}.json"
-    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        }
+        vidsrc_response = requests.get(vidsrc_url, headers=headers, timeout=5)
+        
+        # Check if the response is valid and doesn't contain error indicators
+        if vidsrc_response.status_code == 200:
+            content = vidsrc_response.text.lower()
+            if not any(error in content for error in ['404', 'not found', 'error', 'unavailable']):
+                vidsrc_playable = True
+    except Exception as e:
+        print(f"Error checking vidsrc: {e}")
+        vidsrc_playable = False
+
+    # Only get torrent information if vidsrc is not playable
     info_hash = None
     file_name = None
     
-    try:
-        torrent_response = requests.get(torrent_api_url, headers=headers)
-        torrent_data = torrent_response.json()  # Convert response to JSON
+    if not vidsrc_playable:
+        # Get torrent information
+        headers = {
+            'sec-ch-ua-platform': '"Windows"',
+            'Referer': '',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+            'sec-ch-ua': '"Not(A:Brand";v="99", "Brave";v="133", "Chromium";v="133"',
+            'sec-ch-ua-mobile': '?0',
+        }
         
-        print("API Response:", torrent_data)  # Debug print
+        torrent_api_url = f"https://torrentio.strem.fun/providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex/stream/movie/{imdb_id}.json"
         
-        if torrent_data and "streams" in torrent_data and torrent_data["streams"]:
-            # Try to find 1080p stream first
-            stream = None
-            for s in torrent_data["streams"]:
-                if "1080p" in s.get("name", ""):
-                    stream = s
-                    break
+        try:
+            torrent_response = requests.get(torrent_api_url, headers=headers)
+            torrent_data = torrent_response.json()
             
-            # If no 1080p stream found, use the first available stream
-            if not stream and torrent_data["streams"]:
-                stream = torrent_data["streams"][0]
-            
-            if stream:
-                info_hash = stream.get("infoHash")
-                file_name = stream.get("behaviorHints", {}).get("filename")
-                print(f"Found stream - Hash: {info_hash}, Filename: {file_name}")  # Debug print
-    
-    except requests.RequestException as e:
-        print(f"Request error: {e}")
-    except json.JSONDecodeError as e:
-        print(f"JSON decode error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+            if torrent_data and "streams" in torrent_data and torrent_data["streams"]:
+                # Try to find 1080p stream first
+                stream = None
+                for s in torrent_data["streams"]:
+                    if "1080p" in s.get("name", ""):
+                        stream = s
+                        break
+                
+                # If no 1080p stream found, use the first available stream
+                if not stream and torrent_data["streams"]:
+                    stream = torrent_data["streams"][0]
+                
+                if stream:
+                    info_hash = stream.get("infoHash")
+                    file_name = stream.get("behaviorHints", {}).get("filename")
+                    
+        except Exception as e:
+            print(f"Error getting torrent info: {e}")
 
+    # Process movie details
     title = resp["title"]
     movie_overview = resp["overview"]
     movie_runtime = f"{resp['runtime']} min."
@@ -76,11 +91,7 @@ def movie(id):
     date = resp["release_date"].split("-")
     rls_year = date[0]
     
-    if rls_year == "":
-        year = ""
-    else:
-        year = f"({rls_year})"
-    
+    year = f"({rls_year})" if rls_year else ""
     tagline = resp["tagline"]
 
     return render_template(
@@ -96,7 +107,8 @@ def movie(id):
         tagline=tagline,
         imdb_id=imdb_id,
         info_hash=info_hash,
-        file_name=file_name
+        file_name=file_name,
+        vidsrc_playable=vidsrc_playable
     )
 
 
