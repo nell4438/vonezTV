@@ -6,14 +6,12 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VonezTV | {{ title }} {{ year }}</title>
-
     <!-- CSS Links -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='mdb.dark.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='all.min.css') }}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-
     <style>
         .webtor-play-button {
             position: absolute;
@@ -222,7 +220,6 @@
             <img src="https://image.tmdb.org/t/p/w500/{{ poster_path }}" alt="{{ title }}" class="movie-poster">
             <div class="movie-info">
                 <h1 class="movie-title">{{ title }} <span class="text-muted">{{ year }}</span></h1>
-
                 <div class="movie-meta">
                     <div class="meta-item">
                         <i class="fas fa-clock"></i>
@@ -233,7 +230,6 @@
                         <span>{{ movie_rating }}</span>
                     </div>
                 </div>
-
                 <div class="overview">
                     <h5>Overview</h5>
                     <p>{{ movie_overview }}</p>
@@ -243,51 +239,18 @@
 
         <!-- Video Player -->
         <div class="player-container">
+            {% if vidsrc_playable %}
             <!-- VidSrc Player -->
             <div id="vidsrc-player">
                 <iframe src="https://vidsrc.net/embed/movie/{{ tmdb_id }}" frameborder="0" allowfullscreen="true"
                     width="100%" height="600px" class="movie">
                 </iframe>
             </div>
-
-            <div id="webtor-player" style="display: none; height: 600px;"></div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="text-center">
-        <p>This application hosts no copyrighted content. All content is hosted by third parties.</p>
-        <p>2025 - Code by Vonez</p>
-        <p>
-            Powered by
-            <img class="px-2" src="{{ url_for('static', filename='tmdb.svg') }}" style="width: 150px" alt="TMDB">
-        </p>
-    </footer>
-
-    <script src="{{ url_for('static', filename='mdb.min.js') }}"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8"></script>
-    <script>
-        function checkVidsrcPlayer() {
-            setTimeout(() => {
-                const vidsrcFrame = document.querySelector('#vidsrc-player iframe');
-
-                try {
-                    // If vidsrc fails or returns an error page, switch to webtor
-                    if (!vidsrcFrame.contentWindow || vidsrcFrame.contentWindow.document.body.innerHTML.includes('404')) {
-                        switchToWebtor();
-                    }
-                } catch (e) {
-                    switchToWebtor();
-                }
-            }, 5000); // Check after 5 seconds
-        }
-
-        function switchToWebtor() {
-            if ("{{info_hash}}" && "{{file_name}}") {
-                document.getElementById('vidsrc-player').style.display = 'none';
-                document.getElementById('webtor-player').style.display = 'block';
-
+            {% else %}
+            <!-- Webtor Player -->
+            <div id="webtor-player" style="height: 600px;"></div>
+            {% if info_hash and file_name %}
+            <script>
                 const magnetUri = `magnet:?xt=urn:btih:{{ info_hash }}&dn=${encodeURIComponent("{{ file_name }}")}`
                     + '&tr=' + encodeURIComponent('udp://tracker.opentrackr.org:1337/announce')
                     + '&tr=' + encodeURIComponent('udp://tracker.openbittorrent.com:6969/announce')
@@ -336,13 +299,11 @@
                                         video.muted = true;
                                         video.play().catch(err => {
                                             console.error('Muted autoplay failed:', err);
-                                            showPlayButton();
                                         });
                                     });
                                 }
                             }
                         }
-                        // ... rest of your event handlers ...
                     },
                     forcedFS: true,
                     preserveAspectRatio: true,
@@ -353,12 +314,10 @@
                 function handleFullscreenChange() {
                     const player = document.getElementById('webtor-player');
                     const video = player.querySelector('video');
-
                     if (document.fullscreenElement ||
                         document.webkitFullscreenElement ||
                         document.mozFullScreenElement ||
                         document.msFullscreenElement) {
-
                         player.style.height = '100vh';
                         if (video) {
                             video.style.height = '100vh';
@@ -370,23 +329,28 @@
                         }
                     }
                 }
+            </script>
+            {% else %}
+            <div class="alert alert-warning text-center">
+                Sorry, no alternative source available for this content.
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
 
-            } else {
-                alert('Sorry, no alternative source available for this content.');
-            }
-        }
+    <!-- Footer -->
+    <footer class="text-center">
+        <p>This application hosts no copyrighted content. All content is hosted by third parties.</p>
+        <p>2025 - Code by Vonez</p>
+        <p>
+            Powered by
+            <img class="px-2" src="{{ url_for('static', filename='tmdb.svg') }}" style="width: 150px" alt="TMDB">
+        </p>
+    </footer>
 
-        const playerContainer = document.querySelector('.player-container');
-        checkVidsrcPlayer();
-        document.addEventListener('fullscreenchange', function (e) {
-            const player = document.getElementById('webtor-player');
-            if (document.fullscreenElement === player) {
-                player.style.height = '100vh';
-            } else {
-                player.style.height = '600px';
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='mdb.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8"></script>
 </body>
 
 </html>
