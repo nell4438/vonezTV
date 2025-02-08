@@ -1,19 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VonezTV | {{ title }} {{ year }}</title>
-    
+
     <!-- CSS Links -->
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='mdb.dark.min.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='all.min.css') }}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-    
+
     <style>
+        .webtor-play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .webtor-error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .webtor-progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: #2196F3;
+            transition: width 0.3s;
+        }
+
         .background-wrapper {
             position: fixed;
             top: 0;
@@ -74,10 +111,49 @@
         }
 
         .player-container {
+            position: relative;
             background: rgba(0, 0, 0, 0.5);
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        #webtor-player {
+            position: relative;
+            width: 100%;
+            height: 600px;
+        }
+
+        #webtor-player:fullscreen,
+        #webtor-player:-webkit-full-screen,
+        #webtor-player:-moz-full-screen,
+        #webtor-player:-ms-fullscreen {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #webtor-player video {
+            width: 100%;
+            height: 100%;
+        }
+
+        #webtor-player video:fullscreen,
+        #webtor-player video:-webkit-full-screen,
+        #webtor-player video:-moz-full-screen,
+        #webtor-player video:-ms-fullscreen {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .player-container:fullscreen,
+        .player-container:-webkit-full-screen,
+        .player-container:-moz-full-screen,
+        .player-container:-ms-fullscreen {
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
         }
 
         .navbar {
@@ -113,8 +189,10 @@
                             <i class="fas fa-film"></i> Movies
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/search"><i class="fas fa-search"></i> Search Movies</a></li>
-                            <li><a class="dropdown-item" href="/browse"><i class="fas fa-fire"></i> Popular Movies</a></li>
+                            <li><a class="dropdown-item" href="/search"><i class="fas fa-search"></i> Search Movies</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/browse"><i class="fas fa-fire"></i> Popular Movies</a>
+                            </li>
                             <li><a class="dropdown-item" href="/top"><i class="fas fa-star"></i> Top Rated</a></li>
                         </ul>
                     </li>
@@ -123,8 +201,10 @@
                             <i class="fas fa-tv"></i> TV Shows
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/search/tv"><i class="fas fa-search"></i> Search Shows</a></li>
-                            <li><a class="dropdown-item" href="/browse/tv"><i class="fas fa-fire"></i> Popular Shows</a></li>
+                            <li><a class="dropdown-item" href="/search/tv"><i class="fas fa-search"></i> Search
+                                    Shows</a></li>
+                            <li><a class="dropdown-item" href="/browse/tv"><i class="fas fa-fire"></i> Popular Shows</a>
+                            </li>
                             <li><a class="dropdown-item" href="/top/tv"><i class="fas fa-star"></i> Top Rated</a></li>
                         </ul>
                     </li>
@@ -142,7 +222,7 @@
             <img src="https://image.tmdb.org/t/p/w500/{{ poster_path }}" alt="{{ title }}" class="movie-poster">
             <div class="movie-info">
                 <h1 class="movie-title">{{ title }} <span class="text-muted">{{ year }}</span></h1>
-                
+
                 <div class="movie-meta">
                     <div class="meta-item">
                         <i class="fas fa-clock"></i>
@@ -163,14 +243,14 @@
 
         <!-- Video Player -->
         <div class="player-container">
-            <iframe 
-                src="https://vidsrc.net/embed/movie/{{ tmdb_id }}" 
-                frameborder="0" 
-                allowfullscreen="true"
-                width="100%" 
-                height="600px" 
-                class="movie">
-            </iframe>
+            <!-- VidSrc Player -->
+            <div id="vidsrc-player">
+                <iframe src="https://vidsrc.net/embed/movie/{{ tmdb_id }}" frameborder="0" allowfullscreen="true"
+                    width="100%" height="600px" class="movie">
+                </iframe>
+            </div>
+
+            <div id="webtor-player" style="display: none; height: 600px;"></div>
         </div>
     </div>
 
@@ -179,12 +259,134 @@
         <p>This application hosts no copyrighted content. All content is hosted by third parties.</p>
         <p>2025 - Code by Vonez</p>
         <p>
-            Powered by 
+            Powered by
             <img class="px-2" src="{{ url_for('static', filename='tmdb.svg') }}" style="width: 150px" alt="TMDB">
         </p>
     </footer>
 
-    <!-- Scripts -->
     <script src="{{ url_for('static', filename='mdb.min.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@webtor/embed-sdk-js/dist/index.min.js" charset="utf-8"></script>
+    <script>
+        function checkVidsrcPlayer() {
+            setTimeout(() => {
+                const vidsrcFrame = document.querySelector('#vidsrc-player iframe');
+
+                try {
+                    // If vidsrc fails or returns an error page, switch to webtor
+                    if (!vidsrcFrame.contentWindow || vidsrcFrame.contentWindow.document.body.innerHTML.includes('404')) {
+                        switchToWebtor();
+                    }
+                } catch (e) {
+                    switchToWebtor();
+                }
+            }, 5000); // Check after 5 seconds
+        }
+
+        function switchToWebtor() {
+            if ("{{info_hash}}" && "{{file_name}}") {
+                document.getElementById('vidsrc-player').style.display = 'none';
+                document.getElementById('webtor-player').style.display = 'block';
+
+                const magnetUri = `magnet:?xt=urn:btih:{{ info_hash }}&dn=${encodeURIComponent("{{ file_name }}")}`
+                    + '&tr=' + encodeURIComponent('udp://tracker.opentrackr.org:1337/announce')
+                    + '&tr=' + encodeURIComponent('udp://tracker.openbittorrent.com:6969/announce')
+                    + '&tr=' + encodeURIComponent('udp://open.stealth.si:80/announce')
+                    + '&tr=' + encodeURIComponent('udp://exodus.desync.com:6969/announce')
+                    + '&tr=' + encodeURIComponent('udp://tracker.torrent.eu.org:451/announce');
+
+                window.webtor = window.webtor || [];
+                window.webtor.push({
+                    id: 'webtor-player',
+                    magnet: magnetUri,
+                    file: "{{ file_name }}",
+                    width: '100%',
+                    height: '100%',
+                    title: "{{ title }}",
+                    poster: "https://image.tmdb.org/t/p/w500/{{ poster_path }}",
+                    controls: true,
+                    features: {
+                        autoplay: true,
+                        subtitles: true,
+                        settings: true,
+                        fullscreen: true,
+                        playpause: true,
+                        currentTime: true,
+                        timeline: true,
+                        duration: true,
+                        volume: true,
+                        chromecast: true
+                    },
+                    on: function (e) {
+                        if (e.name == window.webtor.TORRENT_FETCHED) {
+                            console.log('Torrent fetched!');
+                            const video = document.querySelector('#webtor-player video');
+                            if (video) {
+                                // Add fullscreen event listeners
+                                document.addEventListener('fullscreenchange', handleFullscreenChange);
+                                document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+                                document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+                                document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+                                // Try autoplay
+                                const playPromise = video.play();
+                                if (playPromise !== undefined) {
+                                    playPromise.catch(error => {
+                                        console.log('Autoplay with sound failed, trying muted...', error);
+                                        video.muted = true;
+                                        video.play().catch(err => {
+                                            console.error('Muted autoplay failed:', err);
+                                            showPlayButton();
+                                        });
+                                    });
+                                }
+                            }
+                        }
+                        // ... rest of your event handlers ...
+                    },
+                    forcedFS: true,
+                    preserveAspectRatio: true,
+                    responsive: true
+                });
+
+                // Add fullscreen change handler
+                function handleFullscreenChange() {
+                    const player = document.getElementById('webtor-player');
+                    const video = player.querySelector('video');
+
+                    if (document.fullscreenElement ||
+                        document.webkitFullscreenElement ||
+                        document.mozFullScreenElement ||
+                        document.msFullscreenElement) {
+
+                        player.style.height = '100vh';
+                        if (video) {
+                            video.style.height = '100vh';
+                        }
+                    } else {
+                        player.style.height = '600px';
+                        if (video) {
+                            video.style.height = '100%';
+                        }
+                    }
+                }
+
+            } else {
+                alert('Sorry, no alternative source available for this content.');
+            }
+        }
+
+        const playerContainer = document.querySelector('.player-container');
+        checkVidsrcPlayer();
+        document.addEventListener('fullscreenchange', function (e) {
+            const player = document.getElementById('webtor-player');
+            if (document.fullscreenElement === player) {
+                player.style.height = '100vh';
+            } else {
+                player.style.height = '600px';
+            }
+        });
+    </script>
 </body>
+
 </html>
