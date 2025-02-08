@@ -10,14 +10,63 @@ api_key = os.environ.get('TMDB_API_KEY', "ebad75d444db2d272a470389a56d12e9")
 @app.route("/view/movie/<id>")
 def movie(id):
     tmdb_id = id
+    
+    # Get IMDB ID
     imdb_req = requests.get(
         f"http://api.themoviedb.org/3/movie/{id}/external_ids?api_key={api_key}"
     ).json()
     imdb_id = imdb_req["imdb_id"]
+    
+    # Get movie details
     api = requests.get(
         f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={api_key}"
     )
     resp = api.json()
+    
+    # Get torrent information
+    headers = {
+        'sec-ch-ua-platform': '"Windows"',
+        'Referer': '',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+        'sec-ch-ua': '"Not(A:Brand";v="99", "Brave";v="133", "Chromium";v="133"',
+        'sec-ch-ua-mobile': '?0',
+    }
+    
+    torrent_api_url = f"https://torrentio.strem.fun/providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex/stream/movie/{imdb_id}.json"
+    
+    info_hash = None
+    file_name = None
+    
+    try:
+        torrent_response = requests.get(torrent_api_url, headers=headers)
+        torrent_data = torrent_response.json()  # Convert response to JSON
+        
+        print("API Response:", torrent_data)  # Debug print
+        
+        if torrent_data and "streams" in torrent_data and torrent_data["streams"]:
+            # Try to find 1080p stream first
+            stream = None
+            for s in torrent_data["streams"]:
+                if "1080p" in s.get("name", ""):
+                    stream = s
+                    break
+            
+            # If no 1080p stream found, use the first available stream
+            if not stream and torrent_data["streams"]:
+                stream = torrent_data["streams"][0]
+            
+            if stream:
+                info_hash = stream.get("infoHash")
+                file_name = stream.get("behaviorHints", {}).get("filename")
+                print(f"Found stream - Hash: {info_hash}, Filename: {file_name}")  # Debug print
+    
+    except requests.RequestException as e:
+        print(f"Request error: {e}")
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
     title = resp["title"]
     movie_overview = resp["overview"]
     movie_runtime = f"{resp['runtime']} min."
@@ -26,11 +75,14 @@ def movie(id):
     poster_path = resp["poster_path"]
     date = resp["release_date"].split("-")
     rls_year = date[0]
+    
     if rls_year == "":
         year = ""
     else:
         year = f"({rls_year})"
+    
     tagline = resp["tagline"]
+
     return render_template(
         "movie.html",
         title=title,
@@ -43,6 +95,8 @@ def movie(id):
         year=year,
         tagline=tagline,
         imdb_id=imdb_id,
+        info_hash=info_hash,
+        file_name=file_name
     )
 
 
