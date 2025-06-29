@@ -24,7 +24,7 @@ def movie(id):
     resp = api.json()
     
     # Check if vidsrc is playable
-    vidsrc_url = f"https://vidsrc.net/embed/movie/{tmdb_id}"
+    vidsrc_url = f"https://vidjoy.pro/embed/movie/{tmdb_id}"
     vidsrc_playable = False
     
     try:
