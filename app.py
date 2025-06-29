@@ -31,7 +31,7 @@ def movie(id):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
         }
-        vidsrc_response = requests.get(vidsrc_url, headers=headers, timeout=5)
+        vidsrc_response = requests.get(vidsrc_url, headers=headers, timeout=20)
         
         # Check if the response is valid and doesn't contain error indicators
         if vidsrc_response.status_code == 200:
