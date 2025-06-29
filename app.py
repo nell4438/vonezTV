@@ -28,16 +28,44 @@ def movie(id):
     vidsrc_playable = False
     
     try:
+        # More comprehensive headers that mimic a real browser
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Referer': 'https://vidjoy.pro/',
+            'Sec-Fetch-Dest': 'iframe',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+            'Upgrade-Insecure-Requests': '1',
+            'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
         }
-        vidsrc_response = requests.get(vidsrc_url, headers=headers, timeout=20)
+        
+        # Create a session to maintain cookies
+        session = requests.Session()
+        
+        # First visit the main site to get any necessary cookies
+        session.get('https://vidjoy.pro/', headers=headers, timeout=20)
+        
+        # Then visit the specific movie URL
+        vidsrc_response = session.get(vidsrc_url, headers=headers, timeout=20)
         
         # Check if the response is valid and doesn't contain error indicators
         if vidsrc_response.status_code == 200:
             content = vidsrc_response.text.lower()
             if not any(error in content for error in ['404', 'not found', 'error', 'unavailable']):
-                vidsrc_playable = True
+                # Additional check: look for positive indicators that the content is available
+                if any(indicator in content for indicator in ['player', 'video', 'stream', 'watch']):
+                    vidsrc_playable = True
+                    
+        # Print response for debugging
+        print(f"Vidjoy response status: {vidsrc_response.status_code}")
+        print(f"Vidjoy playable: {vidsrc_playable}")
+        
     except Exception as e:
         print(f"Error checking vidsrc: {e}")
         vidsrc_playable = False
