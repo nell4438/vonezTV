@@ -10,104 +10,21 @@ api_key = os.environ.get('TMDB_API_KEY', "ebad75d444db2d272a470389a56d12e9")
 @app.route("/view/movie/<id>")
 def movie(id):
     tmdb_id = id
-    
+
     # Get IMDB ID
     imdb_req = requests.get(
         f"http://api.themoviedb.org/3/movie/{id}/external_ids?api_key={api_key}"
     ).json()
     imdb_id = imdb_req["imdb_id"]
-    
+
     # Get movie details
     api = requests.get(
         f"https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={api_key}"
     )
     resp = api.json()
-    
-    # Check if vidsrc is playable
-    vidsrc_url = f"https://vidjoy.pro/embed/movie/{tmdb_id}"
-    vidsrc_playable = False
-    
-    try:
-        # More comprehensive headers that mimic a real browser
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Referer': 'https://vidjoy.pro/',
-            'Sec-Fetch-Dest': 'iframe',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'same-origin',
-            'Upgrade-Insecure-Requests': '1',
-            'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-        }
-        
-        # Create a session to maintain cookies
-        session = requests.Session()
-        
-        # First visit the main site to get any necessary cookies
-        session.get('https://vidjoy.pro/', headers=headers, timeout=20)
-        
-        # Then visit the specific movie URL
-        vidsrc_response = session.get(vidsrc_url, headers=headers, timeout=20)
-        
-        # Check if the response is valid and doesn't contain error indicators
-        if vidsrc_response.status_code == 200:
-            content = vidsrc_response.text.lower()
-            if not any(error in content for error in ['404', 'not found', 'error', 'unavailable']):
-                # Additional check: look for positive indicators that the content is available
-                if any(indicator in content for indicator in ['player', 'video', 'stream', 'watch']):
-                    vidsrc_playable = True
-                    
-        # Print response for debugging
-        print(f"Vidjoy response status: {vidsrc_response.status_code}")
-        print(f"Vidjoy playable: {vidsrc_playable}")
-        
-    except Exception as e:
-        print(f"Error checking vidsrc: {e}")
-        vidsrc_playable = False
 
-    # Only get torrent information if vidsrc is not playable
-    info_hash = None
-    file_name = None
-    
-    if not vidsrc_playable:
-        # Get torrent information
-        headers = {
-            'sec-ch-ua-platform': '"Windows"',
-            'Referer': '',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-            'sec-ch-ua': '"Not(A:Brand";v="99", "Brave";v="133", "Chromium";v="133"',
-            'sec-ch-ua-mobile': '?0',
-        }
-        
-        torrent_api_url = f"https://torrentio.strem.fun/providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex/stream/movie/{imdb_id}.json"
-        
-        try:
-            torrent_response = requests.get(torrent_api_url, headers=headers)
-            torrent_data = torrent_response.json()
-            
-            if torrent_data and "streams" in torrent_data and torrent_data["streams"]:
-                # Try to find 1080p stream first
-                stream = None
-                for s in torrent_data["streams"]:
-                    if "1080p" in s.get("name", ""):
-                        stream = s
-                        break
-                
-                # If no 1080p stream found, use the first available stream
-                if not stream and torrent_data["streams"]:
-                    stream = torrent_data["streams"][0]
-                
-                if stream:
-                    info_hash = stream.get("infoHash")
-                    file_name = stream.get("behaviorHints", {}).get("filename")
-                    
-        except Exception as e:
-            print(f"Error getting torrent info: {e}")
+    # Construct vidjoy embed URL (used directly now)
+    vidsrc_url = f"https://vidjoy.pro/embed/movie/{tmdb_id}"
 
     # Process movie details
     title = resp["title"]
@@ -134,10 +51,11 @@ def movie(id):
         year=year,
         tagline=tagline,
         imdb_id=imdb_id,
-        info_hash=info_hash,
-        file_name=file_name,
-        vidsrc_playable=vidsrc_playable
+        info_hash=None,
+        file_name=None,
+        vidsrc_playable=True  # Always assume playable
     )
+
 
 
 @app.route("/")
